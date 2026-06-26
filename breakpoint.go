@@ -81,18 +81,16 @@ func runTest(url string, c, n int, interval time.Duration, client *http.Client) 
 		sem <- struct{}{}
 		go func() {
 			defer wg.Done()
-			defer func() { <-sem }() // <-- INI TADI YANG SALAH
+			defer func() { <-sem }()
 
 			start := time.Now()
 			req, _ := http.NewRequest("GET", url, nil)
 			
-			// === STEALTH HEADERS ===
 			req.Header.Set("User-Agent", userAgents[rand.Intn(len(userAgents))])
 			req.Header.Set("Referer", "https://www.google.com/")
 			req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
 			req.Header.Set("Accept-Language", "en-US,en;q=0.5")
 			req.Header.Set("Connection", "keep-alive")
-			// =======================
 
 			resp, err := client.Do(req)
 			dur := time.Since(start).Milliseconds()
@@ -108,7 +106,7 @@ func runTest(url string, c, n int, interval time.Duration, client *http.Client) 
 				resp.Body.Close()
 			}
 			bar.Add(1)
-	}() // <-- go func nya ditutup disini
+	}()
 		time.Sleep(interval)
 	}
 	wg.Wait()
