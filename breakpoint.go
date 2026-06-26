@@ -172,4 +172,3 @@ func isFlat(results []Result, tolPct int) bool {
 	return true
 }
 }
-}
