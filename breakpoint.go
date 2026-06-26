@@ -11,7 +11,6 @@ import (
 	"sort"
 	"sync"
 	"time"
-
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -38,11 +37,10 @@ func main() {
 	step := flag.Duration("step", 20*time.Second, "Wait time between levels")
 	out := flag.String("out", "breakpoint.csv", "Output CSV file")
 	flag.Parse()
-
 	rand.Seed(time.Now().UnixNano())
 
 	fmt.Println("🚀 STARTING BREAKPOINT...")
-	fmt.Printf("Target: %s | -url=%s -c=%d -n=%d\n", *url, *url, *maxC, *n)
+	fmt.Printf("Target: %s | -c=%d -n=%d\n", *url, *maxC, *n)
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	var results []Result
@@ -85,10 +83,9 @@ func runTest(url string, c, n int, interval time.Duration, client *http.Client) 
 
 			start := time.Now()
 			req, _ := http.NewRequest("GET", url, nil)
-			
 			req.Header.Set("User-Agent", userAgents[rand.Intn(len(userAgents))])
 			req.Header.Set("Referer", "https://www.google.com/")
-			req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+			req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9")
 			req.Header.Set("Accept-Language", "en-US,en;q=0.5")
 			req.Header.Set("Connection", "keep-alive")
 
@@ -96,7 +93,6 @@ func runTest(url string, c, n int, interval time.Duration, client *http.Client) 
 			dur := time.Since(start).Milliseconds()
 
 			mu.Lock()
-			defer mu.Unlock()
 			if err!= nil || resp == nil || resp.StatusCode >= 400 {
 				errCount++
 			} else {
@@ -105,6 +101,7 @@ func runTest(url string, c, n int, interval time.Duration, client *http.Client) 
 			if resp!= nil {
 				resp.Body.Close()
 			}
+			mu.Unlock()
 			bar.Add(1)
 	}()
 		time.Sleep(interval)
@@ -116,7 +113,6 @@ func runTest(url string, c, n int, interval time.Duration, client *http.Client) 
 	p50, p95, p99 := percentile(latencies, 50), percentile(latencies, 95), percentile(latencies, 99)
 	rps := float64(len(latencies)) / totalTime
 	errPct := float64(errCount) / float64(n) * 100
-
 	return Result{c, rps, p50, p95, p99, errPct}
 }
 
