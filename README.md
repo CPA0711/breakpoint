@@ -2,7 +2,7 @@ Bismillahirrahmanirrahiim
 
 # CPA Breakpoint
 
-Test RPS vs Concurrency ke google.com pake Go di Termux Android.
+Test RPS vs Concurrency in Golang
 
 ### Cara Install Termux
 ```bash
