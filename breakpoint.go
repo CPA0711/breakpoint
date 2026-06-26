@@ -67,6 +67,7 @@ func runTest(url string, c, n int, interval, warmer time.Duration) Result {
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, c) // Semaphore = batasi concurrency
 
+	startTime := time.Now() // <-- Catat waktu mulai beneran
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
@@ -102,18 +103,14 @@ func runTest(url string, c, n int, interval, warmer time.Duration) Result {
 	p50 := percentile(latencies, 0.50)
 	p95 := percentile(latencies, 0.95)
 	p99 := percentile(latencies, 0.99)
-	elapsed := float64(n) / float64(time.Since(time.Now().Add(-time.Second)).Seconds()) // dummy
-	rps := float64(len(latencies)) / (float64(latencies[len(latencies)-1]) / 1000.0) // fallback
-	if len(latencies) > 0 {
-		totalTime := float64(latencies[len(latencies)-1]) / 1000.0
-		if totalTime > 0 {
-			rps = float64(len(latencies)) / totalTime
-	}
-	} else {
-		rps = 0
-	}
-	errPct := float64(errCount) / float64(n) * 100.0
 
+	totalSeconds := time.Since(startTime).Seconds() // <-- RPS pake waktu total beneran
+	rps := 0.0
+	if totalSeconds > 0 && len(latencies) > 0 {
+		rps = float64(len(latencies)) / totalSeconds
+	}
+
+	errPct := float64(errCount) / float64(n) * 100.0
 	return Result{C: c, N: n, RPS: rps, P50: p50, P95: p95, P99: p99, Err: errPct}
 }
 
@@ -133,7 +130,7 @@ func main() {
 	defer writer.Flush()
 	writer.Write([]string{"C", "N", "RPS", "p50_ms", "p95_ms", "p99_ms", "Err_%"})
 
-	fmt.Printf("🔥 BREAKPOINT STARTING | Target: %s\n", *url)
+	fmt.Printf("🔥 STARTING CPA BREAKPOINT  | Target: %s\n", *url)
 
 	for c := 1; c <= *cMax; c++ {
 		res := runTest(*url, c, *n, *interval, *warmer)
@@ -148,7 +145,7 @@ func main() {
 	})
 		writer.Flush()
 
-	// <-- INI KUNCINYA: \n di depan biar SUMMARY di baris baru
+	// <-- KUNCINYA: \n di depan biar SUMMARY di baris baru
 		fmt.Printf("\nSUMMARY C=%d | RPS: %.2f | p50: %dms | p95: %dms | p99: %dms | Err: %.1f%%\n",
 			res.C, res.RPS, res.P50, res.P95, res.P99, res.Err)
 
@@ -156,5 +153,5 @@ func main() {
 			time.Sleep(*step)
 	}
 	}
-	fmt.Printf("\n🔥 BREAKPOINT DONE.... CSV: %s\n", *csvFile)
+	fmt.Printf("\n🔥 BREAKPOINT TESTING DONE.... CSV: %s\n", *csvFile)
 }
