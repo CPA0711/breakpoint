@@ -176,3 +176,4 @@ func writeCSV(path string, rs []Result) {
 			fmt.Sprintf("%.1f", r.ErrPct),
 	})
 	}
+}
