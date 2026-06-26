@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e # Kalo error langsung stop, biar gak ngehang
 
-echo "╔═╝╔═║╔═║  ╔═ ╔═║╔═╝╔═║ ║╔═║╔═║╝╔═ ═╔╝"
-echo "║  ╔═╝╔═║  ╔═║╔╝╔═╝╔═║╔╝ ╔═╝║ ║║ ║"
-echo "══╝  ╝  ══ ╝══╝ ╝╝ ╝╝  ══╝ ╝"
-echo "        CPA BREAKPOINT - By CPA0711"
+echo "┏━┛┏━┃┏━┃  ┏━ ┏━┃┏━┛┏━┃┃ ┃┏━┃┏━┃┛┏━ ━┏┛"
+echo "┃    ┏━┛┏━┃ ┏━┃┏┏┛┏━┛┏━┃┏┛ ┏━┛┃ ┃┃┃ ┃ ┃    "
+echo " ━━┛┛   ┛ ┛  ━━ ┛ ┛━━┛┛┛┛ ┛ ┛ ━   ━┛┛ ┛ ┛ ┛    "
+echo "        CPA BREAKPOINT "
 echo ""
 
 # Ambil url dari argumen buat di print doang
@@ -16,7 +16,7 @@ for arg in "$@"; do
 done
 
 echo "🚀 STARTING BREAKPOINT..."
-echo "Target: ${URL:-TIDAK DISET} | Args: $@"
+echo "Target: ${URL:-TIDAK DISET} | $@"
 echo ""
 
 # KUNCINYA: Langsung forward semua argumen ke go run
