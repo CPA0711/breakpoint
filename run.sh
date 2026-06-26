@@ -4,7 +4,7 @@ set -e # Kalo error langsung stop, biar gak ngehang
 echo "┏━┛┏━┃┏━┃  ┏━ ┏━┃┏━┛┏━┃┃ ┃┏━┃┏━┃┛┏━ ━┏┛"
 echo "┃  ┏━┛┏━┃ ┏━┃┏┏┛┏━┛┏━┃┏┛ ┏━┛┃ ┃┃┃ ┃ ┃    "
 echo " ━┛┛  ┛ ┛  ━━ ┛ ┛━━┛┛┛┛ ┛ ┛ ━   ━┛┛ ┛ ┛ ┛    "
-echo "        CPA BREAKPOINT "
+echo "      CPA BREAKPOINT"
 echo ""
 
 # Ambil url dari argumen
