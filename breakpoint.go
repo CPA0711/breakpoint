@@ -30,17 +30,17 @@ var userAgents = []string{
 }
 
 func main() {
-	url := flag.String("url", "https://www.alibaba.com", "Target URL") // Default ganti ke Alibaba
+	url := flag.String("url", "https://www.alibaba.com", "Target URL")
 	maxC := flag.Int("c", 20, "Max Concurrency")
 	n := flag.Int("n", 20, "Requests per concurrency level")
 	interval := flag.Duration("interval", 50*time.Millisecond, "Delay between requests")
 	step := flag.Duration("step", 10*time.Second, "Wait time between levels")
 	out := flag.String("out", "breakpoint.csv", "Output CSV file")
-	tolerance := flag.Float64("tol", 0.05, "RPS tolerance for flat detection. 0.05 = 5%") // <-- FITUR BARU
+	tolerance := flag.Float64("tol", 0.05, "RPS tolerance for flat detection. 0.05 = 5%")
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
 
-	fmt.Println("🚀 STARTING CPA BREAKPOINT...")
+	fmt.Println("🚀 STARTING BREAKPOINT...")
 	fmt.Printf("Target: %s | -c=%d -n=%d | AutoStop Tol: %.0f%%\n", *url, *maxC, *n, *tolerance*100)
 
 	client := &http.Client{Timeout: 10 * time.Second}
@@ -53,22 +53,22 @@ func main() {
 		fmt.Printf("<< [C=%d] DONE | RPS: %.2f | p50: %dms | p95: %dms | p99: %dms | Err: %.1f%%\n\n",
 			res.C, res.RPS, res.P50, res.P95, res.P99, res.ErrPct)
 
-		// <-- LOGIKA AUTO STOP DIMULAI DARI SINI
-		if c >= 4 { // Minimal tes sampe C=4 biar ada data
-			if isFlat(results, int(*tolerance*100)) { // Cek 3 data terakhir
+	// LOGIKA AUTO STOP
+		if c >= 4 {
+			if isFlat(results, int(*tolerance*100)) {
 				fmt.Printf("🛑 AUTO STOP: RPS flat 3x berturut-turut di ~%.2f RPS. Breakpoint ketemu.\n", res.RPS)
 				break
 			}
-	}
+	} // <-- INI TADI YANG KELEWAT
 
 		if c < *maxC {
 			time.Sleep(*step)
 	}
-	}
+	} // <-- TUTUP FOR
 
 	writeCSV(*out, results)
 	fmt.Printf("🔥 SELESAI. CSV: %s | Total Level Diuji: %d\n", *out, len(results))
-}
+} // <-- TUTUP MAIN
 
 func runTest(url string, c, n int, interval time.Duration, client *http.Client) Result {
 	var wg sync.WaitGroup
@@ -156,7 +156,7 @@ func writeCSV(filename string, results []Result) {
 	}
 }
 
-// <-- FUNGSI BARU: Cek Flat 3x
+// FUNGSI BARU: Cek Flat 3x - SEKARANG DI LUAR MAIN
 func isFlat(results []Result, tolPct int) bool {
 	if len(results) < 3 {
 		return false
@@ -165,10 +165,9 @@ func isFlat(results []Result, tolPct int) bool {
 	base := last3[0].RPS
 	for _, r := range last3[1:] {
 		diff := math.Abs(r.RPS - base) / base
-		if diff > float64(tolPct)/100.0 { // Toleransi 5%
+		if diff > float64(tolPct)/100.0 {
 			return false
 	}
 	}
 	return true
-}
 }
