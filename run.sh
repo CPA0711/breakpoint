@@ -4,7 +4,7 @@
 set -e 
 CSV=breakpoint.csv
 
-# BANNER ASCII - Versi Aman No Kutip
+# BANNER ASCII
 echo "  _______  _____  ______    _______  ______   _______  _______  "
 echo " / ____/ |/ / _ ) / __/   / ____/ / __/ /  /  _/ _ \ / ____/  "
 echo "/ /      |   / _  \ \/    /     / _// /___/ // , _// / __    "
