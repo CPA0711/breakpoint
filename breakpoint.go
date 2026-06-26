@@ -39,7 +39,7 @@ func main() {
 	out := flag.String("out", "breakpoint.csv", "Output CSV file")
 	flag.Parse()
 
-	rand.Seed(time.Now().UnixNano()) 
+	rand.Seed(time.Now().UnixNano())
 
 	fmt.Println("🚀 STARTING BREAKPOINT...")
 	fmt.Printf("Target: %s | -url=%s -c=%d -n=%d\n", *url, *url, *maxC, *n)
@@ -47,7 +47,7 @@ func main() {
 	client := &http.Client{Timeout: 10 * time.Second}
 	var results []Result
 
-	for c := 1; c <= *maxC; c++ { 
+	for c := 1; c <= *maxC; c++ {
 		fmt.Printf("C=%d Testing... ", c)
 		res := runTest(*url, c, *n, *interval, client)
 		results = append(results, res)
@@ -55,12 +55,12 @@ func main() {
 			res.C, res.RPS, res.P50, res.P95, res.P99, res.ErrPct)
 		if c < *maxC {
 			time.Sleep(*step)
-		}
-	} 
+	}
+	}
 
 	writeCSV(*out, results)
 	fmt.Printf("\n🔥 BREAKPOINT SELESAI. CSV: %s\n", *out)
-} 
+}
 
 func runTest(url string, c, n int, interval time.Duration, client *http.Client) Result {
 	var wg sync.WaitGroup
@@ -81,7 +81,7 @@ func runTest(url string, c, n int, interval time.Duration, client *http.Client) 
 		sem <- struct{}{}
 		go func() {
 			defer wg.Done()
-			defer func() { <-sem }()
+			defer func() { <-sem }() // <-- INI TADI YANG SALAH
 
 			start := time.Now()
 			req, _ := http.NewRequest("GET", url, nil)
@@ -108,7 +108,7 @@ func runTest(url string, c, n int, interval time.Duration, client *http.Client) 
 				resp.Body.Close()
 			}
 			bar.Add(1)
-	}()
+	}() // <-- go func nya ditutup disini
 		time.Sleep(interval)
 	}
 	wg.Wait()
@@ -147,6 +147,5 @@ func writeCSV(filename string, results []Result) {
 			fmt.Sprint(r.P95),
 			fmt.Sprint(r.P99),
 			fmt.Sprintf("%.1f", r.ErrPct),
-		})
+	})
 	}
-)
