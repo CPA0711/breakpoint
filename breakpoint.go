@@ -69,7 +69,7 @@ func main() {
 
 	bar := progressbar.NewOptions(*total,
 			progressbar.OptionSetDescription(fmt.Sprintf("C=%d Warming...", c)),
-			progressbar.OptionShowCount(), progressbar.OptionSetWidth(20))
+			progressbar.OptionShowCount(), progressbar.OptionSetWidth(6))
 
 		sem := make(chan struct{}, c)
 		var wg sync.WaitGroup
