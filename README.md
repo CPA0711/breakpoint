@@ -1,10 +1,9 @@
 Bismillahirrahmanirrahiim
 
-# CPA Breakpoint
+[CPA BREAKPOINT Banner](https://capsule-render.vercel.app/api?type=waving&color=gradient&height=200&section=header&text=CPA%20BREAKPOINT&fontSize=60&fontColor=fff&animation=fadeIn&fontAlignY=38)
 
-Test RPS vs Concurrency in Golang
+# CPA BREAKPOINT
 
-### Cara Install Termux
+Install di Termux
 ```bash
-pkg update -y
-pkg install -y golang gnuplot
+pkg update -y && pkg install -y golang
