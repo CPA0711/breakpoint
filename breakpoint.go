@@ -1,7 +1,7 @@
 package main
 
 import (
-	"crypto/tls" // <-- Penting buat SSL
+	"crypto/tls" // 
 	"encoding/csv"
 	"flag"
 	"fmt"
@@ -62,12 +62,12 @@ func runTest(url string, c, n int, interval, warmer time.Duration) Result {
 	close(jobs)
 
 	bar := progressbar.NewOptions(n,
-	progressbar.OptionSetWidth(8), // <-- BAR KECIL
+	progressbar.OptionSetWidth(8), 
 	progressbar.OptionEnableColorCodes(true),
 	progressbar.OptionSetPredictTime(false),
 	progressbar.OptionSetDescription(fmt.Sprintf("C=%d Testing...", c)),
 	progressbar.OptionShowCount(),
-	progressbar.OptionSetTheme(progressbar.Theme{ // <-- Biar 100% nya gak nempel SUMMARY
+	progressbar.OptionSetTheme(progressbar.Theme{ 
 			Saucer: "#",
 			SaucerHead: "#",
 			SaucerPadding: " ",
@@ -110,8 +110,8 @@ func runTest(url string, c, n int, interval, warmer time.Duration) Result {
 	}()
 	}
 	wg.Wait()
-	bar.Finish() // <-- 1. Selesain barnya dulu
-	fmt.Println() // <-- 2. Kasih enter 1x biar bar nya nongol beneran
+	bar.Finish() 
+	fmt.Println() 
 
 	sort.Ints(latencies)
 	p50 := percentile(latencies, 0.50)
@@ -143,7 +143,7 @@ func main() {
 	defer writer.Flush()
 	writer.Write([]string{"C", "N", "RPS", "p50_ms", "p95_ms", "p99_ms", "Err_%"})
 
-	fmt.Printf("🔥🔥🔥 CPA BREAKPOINT START 🔥🔥🔥 | Target: %s\n", *url)
+	fmt.Printf("CPA BREAKPOINT START  | Target: %s\n", *url)
 
 	for c := 1; c <= *cMax; c++ {
 		res := runTest(*url, c, *n, *interval, *warmer)
