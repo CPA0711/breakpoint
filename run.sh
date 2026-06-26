@@ -12,9 +12,10 @@ echo "\____/   |__//____/___/   /_/___/ /___/____/___/_/|_|/___/    "
 echo "        CPA BREAKPOINT 
 echo ""
 
-echo "🚀 JALANIN TEST KE GOOGLE..."
+echo "🚀 SENDING TEST"
 go run breakpoint.go -n 100 -c 10 -step=10s -warmer=3s -interval=100ms -url=https://google.com -csv=$CSV
 
 echo ""
 echo "✅ SELESAI. CSV ada di: $CSV"
-echo "📌 Liat bagian 'SUMMARY' di atas. Titik mentoknya = Breakpoint."
+echo "📌 Liat bagian 'SUMMARY' di atas. Titik mentoknya = Breakpoint"
+"""
