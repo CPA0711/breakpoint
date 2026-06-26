@@ -29,7 +29,7 @@ func percentile(data []int64, p float64) float64 {
 }
 
 func main() {
-	url := flag.String("url", "http://localhost:3000", "Target URL")
+	url := flag.String("url", "https://borovets.co.il:185.56.74.69", "Target URL")
 	total := flag.Int("n", 100, "Total requests per step")
 	cMax := flag.Int("c", 10, "Max concurrency")
 	interval := flag.Duration("interval", 200*time.Millisecond, "Jeda antar request")
