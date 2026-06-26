@@ -40,16 +40,16 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	fmt.Println("🚀 STARTING BREAKPOINT...")
-	fmt.Printf("Target: %s | -c=%d -n=%d\n", *url, *maxC, *n)
+	fmt.Printf("Target: %s | -c=%d -n=%d\n", *url, *maxC, *n) // <-- tambah \n biar ada spasi
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	var results []Result
 
 	for c := 1; c <= *maxC; c++ {
-		fmt.Printf("C=%d Testing... ", c)
+		fmt.Printf(">> [C=%d] Testing %d requests...\n", c) // <-- Log awal, gak ketimpa
 		res := runTest(*url, c, *n, *interval, client)
 		results = append(results, res)
-		fmt.Printf("\nSUMMARY C=%d | RPS: %.2f | p50: %dms | p95: %dms | p99: %dms | Err: %.1f%%\n",
+		fmt.Printf("<< [C=%d] DONE | RPS: %.2f | p50: %dms | p95: %dms | p99: %dms | Err: %.1f%%\n\n", // <-- \n\n biar ada spasi
 			res.C, res.RPS, res.P50, res.P95, res.P99, res.ErrPct)
 		if c < *maxC {
 			time.Sleep(*step)
@@ -57,7 +57,7 @@ func main() {
 	}
 
 	writeCSV(*out, results)
-	fmt.Printf("\n🔥 BREAKPOINT SELESAI. CSV: %s\n", *out)
+	fmt.Printf("🔥 BREAKPOINT SELESAI. CSV: %s\n", *out)
 }
 
 func runTest(url string, c, n int, interval time.Duration, client *http.Client) Result {
@@ -65,9 +65,10 @@ func runTest(url string, c, n int, interval time.Duration, client *http.Client) 
 	var mu sync.Mutex
 	sem := make(chan struct{}, c)
 	bar := progressbar.NewOptions(n,
-	progressbar.OptionSetWidth(8),
+	progressbar.OptionSetWidth(15), // <-- dibesarin biar gak geser2
 	progressbar.OptionShowCount(),
 	progressbar.OptionSetPredictTime(false),
+	progressbar.OptionClearOnFinish(), // <-- INI KUNCI: Hapus progressbar pas selesai
 	)
 
 	var latencies []int
@@ -143,4 +144,3 @@ func writeCSV(filename string, results []Result) {
 			fmt.Sprintf("%.1f", r.ErrPct),
 	})
 	}
-}
