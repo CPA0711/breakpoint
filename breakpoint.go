@@ -39,13 +39,15 @@ func main() {
 	out := flag.String("out", "breakpoint.csv", "Output CSV file")
 	flag.Parse()
 
-	fmt.Println("STARTING BREAKPOINT...")
+	rand.Seed(time.Now().UnixNano()) 
+
+	fmt.Println("🚀 STARTING BREAKPOINT...")
 	fmt.Printf("Target: %s | -url=%s -c=%d -n=%d\n", *url, *url, *maxC, *n)
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	var results []Result
 
-	for c := 1; c <= *maxC; c++ {
+	for c := 1; c <= *maxC; c++ { 
 		fmt.Printf("C=%d Testing... ", c)
 		res := runTest(*url, c, *n, *interval, client)
 		results = append(results, res)
@@ -53,12 +55,12 @@ func main() {
 			res.C, res.RPS, res.P50, res.P95, res.P99, res.ErrPct)
 		if c < *maxC {
 			time.Sleep(*step)
-	}
-	}
+		}
+	} 
 
 	writeCSV(*out, results)
 	fmt.Printf("\n🔥 BREAKPOINT SELESAI. CSV: %s\n", *out)
-}
+} 
 
 func runTest(url string, c, n int, interval time.Duration, client *http.Client) Result {
 	var wg sync.WaitGroup
@@ -145,5 +147,5 @@ func writeCSV(filename string, results []Result) {
 			fmt.Sprint(r.P95),
 			fmt.Sprint(r.P99),
 			fmt.Sprintf("%.1f", r.ErrPct),
-	})
+		})
 	}
