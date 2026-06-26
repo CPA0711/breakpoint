@@ -25,7 +25,7 @@ type Result struct {
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano()) // Wajib buat jitter
+	rand.Seed(time.Now().UnixNano())
 
 	url := flag.String("url", "", "URL target, wajib")
 	n := flag.Int("n", 100, "Jumlah request per concurrency")
@@ -44,7 +44,7 @@ func main() {
 
 	var results []Result
 	fmt.Printf("Starting HUMAN MODE Test -> %s\n", *url)
-	fmt.Println("Rule Stop: Err% > 15.0% OR p99 > 2000ms") // Toleransi lebih longgar
+	fmt.Println("Rule Stop: Err% > 15.0% OR p99 > 2000ms")
 
 	for c := 1; c <= *maxC; c++ {
 		fmt.Printf(">> [C=%d] Testing %d requests...\n", c, *n)
@@ -58,7 +58,7 @@ func main() {
 				fmt.Printf("🛑 AUTO STOP: WAF Terpicu. Err=%.1f%% atau p99=%dms.\n", res.ErrPct, res.P99)
 				break
 			}
-	}
+		}
 		if c < *maxC {
 			time.Sleep(*step)
 	}
@@ -68,13 +68,12 @@ func main() {
 }
 
 func shouldStop(r Result) bool {
-	if r.ErrPct > 15.0 || r.P99 > 2000 { // Naikin threshold karena emang bakal lambat
+	if r.ErrPct > 15.0 || r.P99 > 2000 {
 		return true
 	}
 	return false
 }
 
-// runTestHuman: Versi yang pura-pura jadi manusia
 func runTestHuman(url string, c, n int, client *http.Client) Result {
 	var mu sync.Mutex
 	var latencies []int64
@@ -82,7 +81,9 @@ func runTestHuman(url string, c, n int, client *http.Client) Result {
 	var okCount int64
 
 	jobs := make(chan struct{}, n)
-	for i := 0; i < n; i++ { jobs <- struct{}{} }
+	for i := 0; i < n; i++ {
+		jobs <- struct{}{}
+	}
 	close(jobs)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -96,27 +97,34 @@ func runTestHuman(url string, c, n int, client *http.Client) Result {
 		go func(workerID int) {
 			defer wg.Done()
 			for range jobs {
-				select { case <-ctx.Done(): return default: }
+				// FIX DI SINI: select harus multiline
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
 
-				// 1. JITTER: Delay random 300ms - 800ms antar request
+				// 1. JITTER: Delay random 300ms - 800ms
 				time.Sleep(time.Duration(300+rand.Intn(500)) * time.Millisecond)
 
 				t0 := time.Now()
 				req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
-				
-				// 2. HEADER MANUSIA: Ini paling penting lawan WAF
+
+				// 2. HEADER MANUSIA
 				req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 				req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
 				req.Header.Set("Accept-Language", "en-US,en;q=0.5")
-				req.Header.Set("Referer", "https://www.google.com/") // WAF suka ini
+				req.Header.Set("Referer", "https://www.google.com/")
 				req.Header.Set("Connection", "keep-alive")
-				
+
 				resp, err := client.Do(req)
 				dt := time.Since(t0).Milliseconds()
 
 				if err!= nil || (resp!= nil && resp.StatusCode >= 400) {
 					atomic.AddInt64(&errCount, 1)
-					if resp!= nil { resp.Body.Close() }
+					if resp!= nil {
+						resp.Body.Close()
+					}
 					continue
 				}
 				resp.Body.Close()
@@ -141,7 +149,9 @@ func runTestHuman(url string, c, n int, client *http.Client) Result {
 
 	total := okCount + errCount
 	errPct := 0.0
-	if total > 0 { errPct = float64(errCount) / float64(total) * 100 }
+	if total > 0 {
+		errPct = float64(errCount) / float64(total) * 100
+	}
 	rps := float64(okCount) / totalTime
 
 	return Result{c, rps, int64(p50), p95, p99, errPct}
