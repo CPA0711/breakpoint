@@ -18,14 +18,6 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-type LogRow struct {
-	Timestamp string
-	StatusCode int
-	DurationMs int64
-	Success bool
-	Concurrency int32
-}
-
 func percentile(data []int64, p float64) float64 {
 	if len(data) == 0 { return 0 }
 	sort.Slice(data, func(i, j int) bool { return data[i] < data[j] })
@@ -59,7 +51,12 @@ func main() {
 	fmt.Println(color.YellowString("Target: %s | Max C: %d | Step: %s", *url, *cMax, *stepTime))
 
 	for c := 1; c <= *cMax; c++ {
-		select { case <-ctx.Done(): fmt.Println(color.RedString("\n[STOP]")); return default: }
+		select {
+		case <-ctx.Done():
+			fmt.Println(color.RedString("\nDibatalkan"))
+			return
+		default:
+	}
 
 		fmt.Println(color.CyanString("\n===== C=%d =====", c))
 		var mu sync.Mutex
@@ -95,10 +92,11 @@ func main() {
 	}
 
 		reqCount := 0
+	STEP_LOOP:
 		for {
 			select {
-			case <-ctx.Done(): break
-			case <-stepTimer.C: break
+			case <-ctx.Done(): break STEP_LOOP
+			case <-stepTimer.C: break STEP_LOOP
 			case <-ticker.C:
 				if reqCount >= *total { continue }
 				reqCount++
@@ -135,7 +133,7 @@ func main() {
 			}
 	}
 		wg.Wait()
-		bar.Finish()
+	bar.Finish()
 
 		if totalDone > 0 {
 			elapsed := time.Since(startTime).Seconds()
