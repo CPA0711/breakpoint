@@ -19,15 +19,19 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# BANNER ASCII - Tetep ada
 cat <<'EOF'
-╔═╝╔═║╔═║  ╔═ ╔═║╔═╝╔═║║ ║╔═║╔═║╝╔═ ═╔╝
-║  ╔═╝╔═║  ╔═║╔╔╝╔═╝╔═║╔╝ ╔═╝║ ║║║ ║ ║ 
-══╝╝  ╝ ╝  ══ ╝ ╝══╝╝ ╝╝ ╝╝  ══╝╝╝ ╝ ╝ 
+╔═╝╔═║╔═║  ╔═ ╔═║╔═╝╔═║ ║╔═║╔═║╝╔═ ═╔╝
+║  ╔═╝╔═║  ╔═║╔╝╔═╝╔═║╔╝ ╔═╝║ ║║ ║ 
+══╝  ╝ ╝  ══ ╝══╝ ╝╝ ╝╝  ══╝ ╝ 
         CPA BREAKPOINT - By CPA0711
 EOF
 echo ""
 echo "🚀 STARTING BREAKPOINT..."
 echo "Target: $URL | Max C: $C | N: $N"
-go run breakpoint.go -n $N -c $C -step=10s -warmer=3s -interval=100ms -url=$URL -csv=$CSV
+
+# Trik biar gak kecampur PS1 Zsh: sembunyiin progress bar
+go run breakpoint.go -n $N -c $C -step=10s -warmer=3s -interval=100ms -url=$URL -csv=$CSV | grep -E "SUMMARY|BREAKPOINT SELESAI"
+
 echo ""
 echo "✅ DONE... CSV at: $CSV"
