@@ -4,7 +4,7 @@ set -e # Kalo error langsung stop, biar gak ngehang
 echo "┏━╸┏━┓┏━┓   ┏┓ ┏━┓┏━╸┏━┓╻┏ ┏━┓┏━┓╻┏┓╻╺┳╸"
 echo "┃  ┣━┛┣━┫   ┣┻┓┣┳┛┣╸ ┣━┫┣┻┓┣━┛┃ ┃┃┃┗┫ ┃ "
 echo "┗━╸╹  ╹ ╹   ┗━┛╹┗╸┗━╸╹ ╹╹ ╹╹  ┗━┛╹╹ ╹ ╹ "
-echo "  BUKAN BREAK MY HEART"
+echo "  BUKAN BREAK MY HEART..."
 echo ""
 
 # Ambil url dari argumen
