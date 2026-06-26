@@ -20,9 +20,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 cat <<'EOF'
-  ╔═╝╔═║ ╔═║ ╔═ ╔═║╔═╝╔═║║ ║╔═║╔═║╝╔═ ═╔╝
-  ║    ╔═╝╔═║ ╔═║╔╔╝╔═╝╔═║╔╝ ╔═╝║ ║║║ ║ ║ 
-   ══╝╝   ╝ ╝  ══ ╝ ╝══╝╝ ╝╝ ╝╝  ══╝╝╝ ╝ ╝ 
+╔═╝╔═║╔═║  ╔═ ╔═║╔═╝╔═║║ ║╔═║╔═║╝╔═ ═╔╝
+║  ╔═╝╔═║  ╔═║╔╔╝╔═╝╔═║╔╝ ╔═╝║ ║║║ ║ ║ 
+══╝╝  ╝ ╝  ══ ╝ ╝══╝╝ ╝╝ ╝╝  ══╝╝╝ ╝ ╝ 
         CPA BREAKPOINT - By CPA0711
 EOF
 echo ""
@@ -30,4 +30,4 @@ echo "🚀 STARTING BREAKPOINT..."
 echo "Target: $URL | Max C: $C | N: $N"
 go run breakpoint.go -n $N -c $C -step=10s -warmer=3s -interval=100ms -url=$URL -csv=$CSV
 echo ""
-echo "✅ SELESAI. CSV ada di: $CSV"
+echo "✅ DONE... CSV at: $CSV"
