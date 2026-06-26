@@ -46,7 +46,7 @@ func main() {
 	var results []Result
 
 	for c := 1; c <= *maxC; c++ {
-		fmt.Printf(">> [C=%d] Testing %d requests...\n", c, n) // <-- UDAH DI FIX: tambah n
+		fmt.Printf(">> [C=%d] Testing %d requests...\n", c, *n)
 		res := runTest(*url, c, *n, *interval, client)
 		results = append(results, res)
 		fmt.Printf("<< [C=%d] DONE | RPS: %.2f | p50: %dms | p95: %dms | p99: %dms | Err: %.1f%%\n\n",
