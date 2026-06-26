@@ -30,17 +30,18 @@ var userAgents = []string{
 }
 
 func main() {
-	url := flag.String("url", "https://google.com", "Target URL")
-	maxC := flag.Int("c", 10, "Max Concurrency")
-	n := flag.Int("n", 100, "Requests per concurrency level")
-	interval := flag.Duration("interval", 200*time.Millisecond, "Delay between requests")
-	step := flag.Duration("step", 20*time.Second, "Wait time between levels")
+	url := flag.String("url", "https://www.alibaba.com", "Target URL") // Default ganti ke Alibaba
+	maxC := flag.Int("c", 20, "Max Concurrency")
+	n := flag.Int("n", 20, "Requests per concurrency level")
+	interval := flag.Duration("interval", 50*time.Millisecond, "Delay between requests")
+	step := flag.Duration("step", 10*time.Second, "Wait time between levels")
 	out := flag.String("out", "breakpoint.csv", "Output CSV file")
+	tolerance := flag.Float64("tol", 0.05, "RPS tolerance for flat detection. 0.05 = 5%") // <-- FITUR BARU
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
 
-	fmt.Println("🚀 STARTING BREAKPOINT...")
-	fmt.Printf("Target: %s | -c=%d -n=%d\n", *url, *maxC, *n)
+	fmt.Println("🚀 STARTING CPA BREAKPOINT...")
+	fmt.Printf("Target: %s | -c=%d -n=%d | AutoStop Tol: %.0f%%\n", *url, *maxC, *n, *tolerance*100)
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	var results []Result
@@ -51,13 +52,22 @@ func main() {
 		results = append(results, res)
 		fmt.Printf("<< [C=%d] DONE | RPS: %.2f | p50: %dms | p95: %dms | p99: %dms | Err: %.1f%%\n\n",
 			res.C, res.RPS, res.P50, res.P95, res.P99, res.ErrPct)
+
+		// <-- LOGIKA AUTO STOP DIMULAI DARI SINI
+		if c >= 4 { // Minimal tes sampe C=4 biar ada data
+			if isFlat(results, int(*tolerance*100)) { // Cek 3 data terakhir
+				fmt.Printf("🛑 AUTO STOP: RPS flat 3x berturut-turut di ~%.2f RPS. Breakpoint ketemu.\n", res.RPS)
+				break
+			}
+	}
+
 		if c < *maxC {
 			time.Sleep(*step)
 	}
 	}
 
 	writeCSV(*out, results)
-	fmt.Printf("🔥 BREAKPOINT SELESAI. CSV: %s\n", *out)
+	fmt.Printf("🔥 SELESAI. CSV: %s | Total Level Diuji: %d\n", *out, len(results))
 }
 
 func runTest(url string, c, n int, interval time.Duration, client *http.Client) Result {
@@ -68,7 +78,7 @@ func runTest(url string, c, n int, interval time.Duration, client *http.Client) 
 	progressbar.OptionSetWidth(15),
 	progressbar.OptionShowCount(),
 	progressbar.OptionSetPredictTime(false),
-	progressbar.OptionClearOnFinish(), // Hapus progressbar biar log gak ketimpa
+	progressbar.OptionClearOnFinish(),
 	)
 
 	var latencies []int
@@ -144,4 +154,22 @@ func writeCSV(filename string, results []Result) {
 			fmt.Sprintf("%.1f", r.ErrPct),
 	})
 	}
+}
+
+// <-- FUNGSI BARU: Cek Flat 3x
+func isFlat(results []Result, tolPct int) bool {
+	if len(results) < 3 {
+		return false
+	}
+	last3 := results[len(results)-3:]
+	base := last3[0].RPS
+	for _, r := range last3[1:] {
+		diff := math.Abs(r.RPS - base) / base
+		if diff > float64(tolPct)/100.0 { // Toleransi 5%
+			return false
+	}
+	}
+	return true
+}
+}
 }
