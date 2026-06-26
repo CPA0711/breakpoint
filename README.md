@@ -7,3 +7,5 @@ Bismillahirrahmanirrahiim
 Install di Termux
 ```bash
 pkg update -y && pkg install -y golang
+chmod +x run.sh
+bash run.sh
