@@ -12,4 +12,5 @@ pkg update -y && pkg install -y golang
 chmod +x run.sh
 bash run.sh
 
+```
 Copyright 2026 CPA0711. Project ini dilisensikan di bawah [MIT License](LICENSE).
