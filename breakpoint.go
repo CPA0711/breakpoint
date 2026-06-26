@@ -1,147 +1,160 @@
 package main
 
 import (
-	"context"
 	"encoding/csv"
 	"flag"
 	"fmt"
 	"math"
 	"net/http"
 	"os"
-	"os/signal"
 	"sort"
 	"sync"
-	"sync/atomic"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/schollz/progressbar/v3"
 )
 
-func percentile(data []int64, p float64) float64 {
-	if len(data) == 0 { return 0 }
-	sort.Slice(data, func(i, j int) bool { return data[i] < data[j] })
-	k := p * float64(len(data)-1)
-	f := math.Floor(k)
-	i := int(f)
-	if i+1 < len(data) { return float64(data[i]) + (k-f)*float64(data[i+1]-data[i]) }
-	return float64(data[i])
+type Result struct {
+	C int
+	N int
+	RPS float64
+	P50 int
+	P95 int
+	P99 int
+	Err float64
+}
+
+func percentile(sorted []int, p float64) int {
+	if len(sorted) == 0 {
+		return 0
+	}
+	idx := int(math.Ceil(p*float64(len(sorted)))) - 1
+	if idx < 0 {
+		idx = 0
+	}
+	if idx >= len(sorted) {
+		idx = len(sorted) - 1
+	}
+	return sorted[idx]
+}
+
+func runTest(url string, c, n int, interval, warmer time.Duration) Result {
+	client := &http.Client{Timeout: 15 * time.Second}
+	var mu sync.Mutex
+	latencies := make([]int, 0, n)
+	errCount := 0
+
+	// Warmer: biar gak kena cold start
+	for i := 0; i < int(warmer.Milliseconds())/100; i++ {
+		client.Get(url)
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	jobs := make(chan struct{}, n)
+	for i := 0; i < n; i++ {
+		jobs <- struct{}{}
+	}
+	close(jobs)
+
+	bar := progressbar.NewOptions(n,
+	progressbar.OptionSetWidth(8), // <-- BAR KECIL 8
+	progressbar.OptionEnableColorCodes(true),
+	progressbar.OptionSetPredictTime(false),
+	progressbar.OptionSetDescription(fmt.Sprintf("C=%d Testing...", c)),
+	progressbar.OptionShowCount(),
+	)
+
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, c) // Semaphore = batasi concurrency
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for range jobs {
+	<-ticker.C // Rate limit biar rapi
+		wg.Add(1)
+		sem <- struct{}{}
+		go func() {
+			defer wg.Done()
+			defer func() { <-sem }()
+
+			start := time.Now()
+			resp, err := client.Get(url)
+			dur := time.Since(start).Milliseconds()
+
+			mu.Lock()
+			if err!= nil || resp.StatusCode >= 400 {
+				errCount++
+			} else {
+				latencies = append(latencies, int(dur))
+			}
+			if resp!= nil {
+				resp.Body.Close()
+			}
+			mu.Unlock()
+			bar.Add(1)
+	}()
+	}
+	wg.Wait()
+	bar.Finish()
+
+	sort.Ints(latencies)
+	p50 := percentile(latencies, 0.50)
+	p95 := percentile(latencies, 0.95)
+	p99 := percentile(latencies, 0.99)
+	elapsed := float64(n) / float64(time.Since(time.Now().Add(-time.Second)).Seconds()) // dummy
+	rps := float64(len(latencies)) / (float64(latencies[len(latencies)-1]) / 1000.0) // fallback
+	if len(latencies) > 0 {
+		totalTime := float64(latencies[len(latencies)-1]) / 1000.0
+		if totalTime > 0 {
+			rps = float64(len(latencies)) / totalTime
+	}
+	} else {
+		rps = 0
+	}
+	errPct := float64(errCount) / float64(n) * 100.0
+
+	return Result{C: c, N: n, RPS: rps, P50: p50, P95: p95, P99: p99, Err: errPct}
 }
 
 func main() {
-	url := flag.String("url", "http://localhost:3000", "Target URL")
-	total := flag.Int("n", 100, "Total requests per step")
+	url := flag.String("url", "https://google.com", "Target URL")
+	n := flag.Int("n", 100, "Jumlah request per C")
 	cMax := flag.Int("c", 10, "Max concurrency")
-	interval := flag.Duration("interval", 200*time.Millisecond, "Jeda antar request")
-	csvFile := flag.String("csv", "/sdcard/breakpoint.csv", "CSV")
-	warmer := flag.Duration("warmer", 5*time.Second, "Durasi warmer")
-	stepTime := flag.Duration("step", 30*time.Second, "Lama per step")
+	step := flag.Duration("step", 10*time.Second, "Jeda antar C")
+	warmer := flag.Duration("warmer", 3*time.Second, "Waktu warmup")
+	interval := flag.Duration("interval", 100*time.Millisecond, "Jeda antar request")
+	csvFile := flag.String("csv", "breakpoint.csv", "File output CSV")
 	flag.Parse()
 
 	file, _ := os.Create(*csvFile)
 	defer file.Close()
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
-	writer.Write([]string{"timestamp", "status_code", "duration_ms", "success", "concurrency"})
+	writer.Write([]string{"C", "N", "RPS", "p50_ms", "p95_ms", "p99_ms", "Err_%"})
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
-
-	fmt.Println(color.YellowString("Target: %s | Max C: %d | Step: %s", *url, *cMax, *stepTime))
+	fmt.Printf("🔥 BREAKPOINT STARTING | Target: %s\n", *url)
 
 	for c := 1; c <= *cMax; c++ {
-		select {
-		case <-ctx.Done():
-			fmt.Println(color.RedString("\nDibatalkan"))
-			return
-		default:
-	}
+		res := runTest(*url, c, *n, *interval, *warmer)
+		writer.Write([]string{
+			fmt.Sprintf("%d", res.C),
+			fmt.Sprintf("%d", res.N),
+			fmt.Sprintf("%.2f", res.RPS),
+			fmt.Sprintf("%d", res.P50),
+			fmt.Sprintf("%d", res.P95),
+			fmt.Sprintf("%d", res.P99),
+			fmt.Sprintf("%.1f", res.Err),
+	})
+		writer.Flush()
 
-		fmt.Println(color.CyanString("\n===== C=%d =====", c))
-		var mu sync.Mutex
-		var durations []int64
-		var statusCount = make(map[int]int)
-		var successCount, totalDone int
-		var active int32
-		var isWarming = true
-		var startTime time.Time
+	// <-- INI KUNCINYA: \n di depan biar SUMMARY di baris baru
+		fmt.Printf("\nSUMMARY C=%d | RPS: %.2f | p50: %dms | p95: %dms | p99: %dms | Err: %.1f%%\n",
+			res.C, res.RPS, res.P50, res.P95, res.P99, res.Err)
 
-	bar := progressbar.NewOptions(*total,
-			progressbar.OptionSetDescription(fmt.Sprintf("C=%d Warming...", c)),
-			progressbar.OptionShowCount(), progressbar.OptionSetWidth(6))
-
-		sem := make(chan struct{}, c)
-		var wg sync.WaitGroup
-		ticker := time.NewTicker(*interval)
-		stepTimer := time.NewTimer(*stepTime)
-		defer ticker.Stop()
-		defer stepTimer.Stop()
-
-		if *warmer > 0 {
-			time.AfterFunc(*warmer, func() {
-				mu.Lock()
-				isWarming = false
-				startTime = time.Now()
-				mu.Unlock()
-				bar.Describe(fmt.Sprintf("C=%d Testing...", c))
-			})
-	} else {
-			isWarming = false
-			startTime = time.Now()
-	}
-
-		reqCount := 0
-	STEP_LOOP:
-		for {
-			select {
-			case <-ctx.Done(): break STEP_LOOP
-			case <-stepTimer.C: break STEP_LOOP
-			case <-ticker.C:
-				if reqCount >= *total { continue }
-				reqCount++
-				wg.Add(1)
-				sem <- struct{}{}
-				go func() {
-					defer wg.Done()
-					defer func() { <-sem }()
-					atomic.AddInt32(&active, 1)
-					defer atomic.AddInt32(&active, -1)
-
-					start := time.Now()
-					req, _ := http.NewRequestWithContext(ctx, "GET", *url, nil)
-					resp, err := client.Do(req)
-					dur := time.Since(start).Milliseconds()
-					code, ok := 0, false
-					if err == nil {
-						code = resp.StatusCode
-						ok = resp.StatusCode >= 200 && resp.StatusCode < 300
-						resp.Body.Close()
-					}
-
-					mu.Lock()
-					if!isWarming {
-						durations = append(durations, dur)
-						statusCount[code]++
-						if ok { successCount++ }
-						totalDone++
-						writer.Write([]string{time.Now().Format("15:04:05"), fmt.Sprintf("%d", code), fmt.Sprintf("%d", dur), fmt.Sprintf("%t", ok), fmt.Sprintf("%d", c)})
-						bar.Add(1)
-					}
-					mu.Unlock()
-				}()
-			}
-	}
-		wg.Wait()
-	bar.Finish()
-
-		if totalDone > 0 {
-			elapsed := time.Since(startTime).Seconds()
-			fmt.Printf("%s C=%d | RPS: %.2f | p50: %.0fms | p95: %.0fms | p99: %.0fms | Err: %.1f%%\n",
-				color.GreenString("SUMMARY"),
-				c, float64(totalDone)/elapsed, percentile(durations, 0.50), percentile(durations, 0.95), percentile(durations, 0.99),
-				100*float64(totalDone-successCount)/float64(totalDone))
+		if c < *cMax {
+			time.Sleep(*step)
 	}
 	}
-	fmt.Println(color.GreenString("\n🔥 BREAKPOINT SELESAI. CSV: %s", *csvFile))
+	fmt.Printf("\n🔥 BREAKPOINT DONE.... CSV: %s\n", *csvFile)
 }
