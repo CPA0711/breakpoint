@@ -1,6 +1,6 @@
-http://user1:pass1@205.147.17.10:80
-http://user2:pass2@195.242.214.22:80
-http://user3:pass3@149.50.211.155:80
-http://user4:pass4@205.147.22.25:80
+http://user1:pass1@205.147.17.10:8080
+http://user2:pass2@195.242.214.22:8080
+http://user3:pass3@149.50.211.155:8080
+http://user4:pass4@205.147.22.25:8080
 
 
